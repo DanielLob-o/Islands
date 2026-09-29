@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "lobo.islands",
+  "name": "Islands",
+  "version": "1.0.0",
+  "author": "Daniel Lobo",
+  "license": "MIT",
+  "description": "The Omarchy bar split into floating rounded islands for the left, center, and right sections.",
+  "kinds": [
+    "bar"
+  ],
+  "entryPoints": {
+    "bar": "Bar.qml"
+  }
+}
