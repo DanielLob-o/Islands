@@ -598,8 +598,13 @@ Item {
     return isFinite(n) && islandSettings[key] !== null && islandSettings[key] !== "" ? Util.clamp(n, min, max) : fallback
   }
 
+  // "auto" tracks the theme's bar background (Color.bar.background, from
+  // shell.toml's [bar] section) so islands go light in light themes and dark
+  // in dark ones; the contrast shim above already picks a readable foreground
+  // either way. Anything else must be a #rrggbb hex.
   readonly property color islandBaseColor: {
     var value = String(islandSettings.color || "#000000")
+    if (value === "auto") return Color.bar.background
     return Qt.color(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(value) ? value : "#000000")
   }
   readonly property real islandOpacity: transparent ? islandNumber("transparentOpacity", 0.6, 0, 1) : islandNumber("opacity", 1, 0, 1)

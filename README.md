@@ -45,7 +45,7 @@ Add an `islands` object to the `bar` section of `~/.config/omarchy/shell.json`. 
 
 | Key | Default | Description |
 |---|---|---|
-| `color` | `#000000` | Island color, as `#rrggbb` |
+| `color` | `#000000` | Island color, as `#rrggbb`, or `auto` to follow the theme's bar background |
 | `opacity` | `1` | Island opacity, `0` to `1` |
 | `transparentOpacity` | `0.6` | Opacity while the bar's transparent mode is on |
 | `radius` | `-1` | Corner radius in pixels. `-1` follows Hyprland's window rounding. |
@@ -53,7 +53,7 @@ Add an `islands` object to the `bar` section of `~/.config/omarchy/shell.json`. 
 | `borderWidth` | `1` | Border width in pixels. `0` removes it. |
 | `padding` | `10` | Space between an island's edge and its first and last widget |
 
-Text switches between light and dark to stay readable on the island color.
+Text switches between light and dark to stay readable on the island color. Set `color` to `auto` to make the islands themselves follow the Omarchy theme — light islands on light themes, dark islands on dark ones.
 
 Everything else works as on the stock bar: move widgets with `omarchy bar move`, drag them on the bar, and double-click empty center space to toggle transparency.
 
