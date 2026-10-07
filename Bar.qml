@@ -88,6 +88,37 @@ Item {
   Behavior on barForeground { enabled: root.foregroundAnimationEnabled; ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
   Behavior on background { ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
   Behavior on urgent { ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
+
+  // Popup panels paint on the theme's popup surface (Color.popups), not on
+  // the island fill, so their text must follow the theme's popup colors
+  // rather than the island-contrast shim above. First-party panels get this
+  // facade as their `bar` (see ModuleSlot.injectProps): `foreground` tracks
+  // the popup text color while `barForeground` keeps the island shim for the
+  // embedded bar mark (BarIconButton reads barForeground). The rest forwards.
+  readonly property QtObject panelFacade: QtObject {
+    property color foreground: Color.popups.text
+    property color barForeground: root.barForeground
+    property color background: root.background
+    property color urgent: root.urgent
+    property string fontFamily: root.fontFamily
+    property int barSize: root.barSize
+    property bool vertical: root.vertical
+    property string position: root.position
+    property bool foregroundAnimationEnabled: root.foregroundAnimationEnabled
+    property bool centerHoverRevealSuppressed: root.centerHoverRevealSuppressed
+    property var shell: root.shell
+    property var activePopout: root.activePopout
+    property var clickTargets: root.clickTargets
+    function switchPanelFrom(owner, direction) { return root.switchPanelFrom(owner, direction) }
+    function setCenterHoverRevealSuppressed(value) { root.setCenterHoverRevealSuppressed(value) }
+    function moduleWidgets(id) { return root.moduleWidgets(id) }
+    function run(command) { root.run(command) }
+    function requestPopout(owner) { root.requestPopout(owner) }
+    function releasePopout(owner) { root.releasePopout(owner) }
+    function targetBelongsToWindow(target, window) { return root.targetBelongsToWindow(target, window) }
+    function showTooltip(target, text) { root.showTooltip(target, text) }
+    function hideTooltip(target) { root.hideTooltip(target) }
+  }
   property var tooltipTarget: null
   property var pendingTooltipTarget: null
   property string tooltipText: ""
@@ -2131,8 +2162,12 @@ Item {
     function injectProps() {
       var target = activeItem
       if (!target) return
+      // Ui.Panel-based widgets (first-party panels with popups) render both a
+      // bar mark and a popup; the facade gives the popup theme colors while
+      // the mark keeps the island-contrast color via barForeground.
       if ("bar" in target) target.bar = firstParty
-        ? root : root.pluginBarApiFor(pluginApiId, moduleName, registered)
+        ? (("controller" in target) ? root.panelFacade : root)
+        : root.pluginBarApiFor(pluginApiId, moduleName, registered)
       if ("moduleName" in target) target.moduleName = moduleName
       if ("settings" in target) target.settings = moduleSettings
     }
