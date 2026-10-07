@@ -57,9 +57,27 @@ Text switches between light and dark to stay readable on the island color. Set `
 
 Everything else works as on the stock bar: move widgets with `omarchy bar move`, drag them on the bar, and double-click empty center space to toggle transparency.
 
-## Known issue
+## Known issues
 
-Omarchy rebuilds third-party bars when `shell.json` changes, and some built-in widgets can disappear after the rebuild. This affects any third-party bar, including ones made with `omarchy plugin clone omarchy.bar`. If widgets go missing after a config change, run:
+### Some plugin widgets do not work
+
+Omarchy trusts only its stock bar. When a third-party bar is active, Omarchy gives it a restricted shell API, so that a bar cannot get access to other plugins' data. This affects any third-party bar, including ones made with `omarchy plugin clone omarchy.bar`.
+
+Under a third-party bar, a widget's `bar.shell.serviceFor(...)` always returns `null`, and the shell's internal objects are not available. Widgets that use these do not work correctly. Known examples:
+
+- [Den](https://github.com/SaifOmar/so.den): cannot read its config or add plugins, and its icons disappear.
+- [Solfa](https://github.com/SirAllap/omarchy-solfa): the panel opens empty.
+- [OmaTasks for Todoist](https://github.com/crmne/omatasks): the panel does not open.
+
+Islands cannot work around this without breaking Omarchy's security rule. The fix must come from Omarchy. See [#1](https://github.com/DanielLob-o/Islands/issues/1). If you need these widgets, use the stock bar:
+
+```sh
+omarchy bar reset
+```
+
+### Widgets disappear after a config change
+
+Omarchy rebuilds third-party bars when `shell.json` changes, and some built-in widgets can disappear after the rebuild. This affects any third-party bar. If widgets go missing after a config change, run:
 
 ```sh
 omarchy restart shell
