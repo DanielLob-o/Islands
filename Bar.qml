@@ -1361,8 +1361,26 @@ Item {
 
       visible: root.tooltipShown && root.tooltipTarget !== null && root.tooltipText !== "" && root.targetBelongsToWindow(root.tooltipTarget, barWindow)
       color: "transparent"
-      implicitWidth: Math.ceil(tooltipBubble.implicitWidth)
-      implicitHeight: Math.ceil(tooltipBubble.implicitHeight)
+      // The surface rounds its size to whole logical pixels, which at a
+      // fractional scale leaves it up to a device pixel narrower than the
+      // bubble. The bubble's right and bottom borders then fall outside the
+      // surface and vanish, so the tooltip looks cut on that side. One extra
+      // logical pixel keeps the border inside at any scale.
+      implicitWidth: Math.ceil(tooltipBubble.implicitWidth) + 1
+      implicitHeight: Math.ceil(tooltipBubble.implicitHeight) + 1
+
+      // Each show maps a fresh surface at a whole-number scale before Qt receives
+      // the output's fractional one. Keep the bubble transparent until it matches
+      // the bar, or the first frames appear oversized and clipped on fractional
+      // scales (1.25, 1.5, 1.6, ...).
+      readonly property bool scaleReady: visible && Math.round(devicePixelRatio * 120) === Math.round(barWindow.devicePixelRatio * 120)
+      property bool revealed: false
+
+      // Only hiding resets it: at a whole-number scale the ratio dips to 1 after the first frame.
+      onVisibleChanged: if (!visible) revealed = false
+      onScaleReadyChanged: if (scaleReady) Qt.callLater(function() {
+        if (tooltipWindow.scaleReady) tooltipWindow.revealed = true
+      })
 
       anchor {
         id: tooltipAnchor
@@ -1400,6 +1418,7 @@ Item {
 
       BorderSurface {
         id: tooltipBubble
+        opacity: tooltipWindow.revealed ? 1 : 0
         implicitWidth: tooltipLabel.implicitWidth + 20
         implicitHeight: tooltipLabel.implicitHeight + 14
         color: Color.tooltip.background
