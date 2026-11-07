@@ -1364,6 +1364,19 @@ Item {
       implicitWidth: Math.ceil(tooltipBubble.implicitWidth)
       implicitHeight: Math.ceil(tooltipBubble.implicitHeight)
 
+      // Each show maps a fresh surface at a whole-number scale before Qt receives
+      // the output's fractional one. Keep the bubble transparent until it matches
+      // the bar, or the first frames appear oversized and clipped on fractional
+      // scales (1.25, 1.5, 1.6, ...).
+      readonly property bool scaleReady: visible && Math.round(devicePixelRatio * 120) === Math.round(barWindow.devicePixelRatio * 120)
+      property bool revealed: false
+
+      // Only hiding resets it: at a whole-number scale the ratio dips to 1 after the first frame.
+      onVisibleChanged: if (!visible) revealed = false
+      onScaleReadyChanged: if (scaleReady) Qt.callLater(function() {
+        if (tooltipWindow.scaleReady) tooltipWindow.revealed = true
+      })
+
       anchor {
         id: tooltipAnchor
         window: barWindow
@@ -1400,6 +1413,7 @@ Item {
 
       BorderSurface {
         id: tooltipBubble
+        opacity: tooltipWindow.revealed ? 1 : 0
         implicitWidth: tooltipLabel.implicitWidth + 20
         implicitHeight: tooltipLabel.implicitHeight + 14
         color: Color.tooltip.background
