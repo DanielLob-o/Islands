@@ -1430,13 +1430,13 @@ Item {
 
         Island {
           visible: hLeft.visible && hLeft.width > 0
-          from: hLeft.x + root.leadingTrayReserve(hLeft)
+          from: hLeft.x
           to: hLeft.x + hLeft.width
         }
 
         Island {
           visible: hRight.visible && hRight.width > 0
-          from: hRight.x + root.leadingTrayReserve(hRight)
+          from: hRight.x
           to: hRight.x + hRight.width
         }
 
@@ -1763,22 +1763,6 @@ Item {
         }
       }
     }
-  }
-
-  // The stock tray keeps its collapsed drawer's width reserved at its left edge;
-  // when it leads a section, start the island after that empty space.
-  function leadingTrayReserve(list) {
-    var row = list ? list.item : null
-    if (!row || root.vertical) return 0
-    for (var i = 0; i < row.children.length; i++) {
-      var slot = row.children[i]
-      if (!slot || !slot.visible || slot.width <= 0) continue
-      var item = slot.activeItem
-      if (item && typeof item.drawerExtent === "number" && typeof item.revealExtent === "number")
-        return Math.max(0, item.drawerExtent - item.revealExtent)
-      return 0
-    }
-    return 0
   }
 
   component Island: Rectangle {
