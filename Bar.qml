@@ -46,7 +46,7 @@ Item {
     position: "top",
     transparent: false,
     centerAnchor: "omarchy.clock",
-    layout: { left: [], centerBegin: [], center: [], centerEnd: [], right: [] }
+    layout: { left: [], centerBegin: [], center: [], centerEnd: [], right: [], tray: [] }
   })
   property var layoutConfig: fallbackBarConfig.layout
   property string centerAnchor: ""
@@ -147,10 +147,35 @@ Item {
   property var moduleSlots: []
   property var pluginBarApis: ({})
   property var pluginObjectOwners: []
+  // An open panel from a widget in the tray section keeps the tray's drawer
+  // open, so the panel's widget stays on screen under it. The Tray widget
+  // reads this from its bar.
+  readonly property bool traySectionPopoutOpen: {
+    var owner = activePopout
+    if (!owner) return false
+    for (var i = 0; i < moduleSlots.length; i++) {
+      var slot = moduleSlots[i]
+      if (slot && slot.activeItem === owner) return slot.region === "tray"
+    }
+    return false
+  }
 
   Component {
     id: pluginBarApiComponent
     PluginBarApi { }
+  }
+
+  // The tray section's widgets, which the tray's slot draws inside the tray's
+  // drawer. They are ordinary module slots of their own region, so they open
+  // panels and keep settings the way widgets on the bar do. Declared here, not
+  // in ModuleSlot: a module list holds module slots, so one declared in there
+  // would make the types a cycle.
+  Component {
+    id: traySectionComponent
+    ModuleList {
+      entries: root.layoutEntries("tray")
+      region: "tray"
+    }
   }
 
   function publicLayoutConfig() {
@@ -176,6 +201,8 @@ Item {
       api.centerSectionRevealHeld = Qt.binding(function() { return root.centerSectionRevealHeld })
     if ("_centerHoverRevealSuppressed" in api)
       api._centerHoverRevealSuppressed = Qt.binding(function() { return root.centerHoverRevealSuppressed })
+    if ("traySectionPopoutOpen" in api)
+      api.traySectionPopoutOpen = Qt.binding(function() { return root.traySectionPopoutOpen })
     root.syncPluginBarApiObjects(api)
   }
 
@@ -645,7 +672,9 @@ Item {
       centerBegin: pinTrayToInner(normalized.centerBegin, "centerBegin"),
       center:      pinTrayToInner(normalized.center,      "center"),
       centerEnd:   pinTrayToInner(normalized.centerEnd,   "centerEnd"),
-      right:       pinTrayToInner(normalized.right,       "right")
+      right:       pinTrayToInner(normalized.right,       "right"),
+      // Drawn inside the tray's drawer (see ModuleSlot.hostsTraySection).
+      tray:        normalized.tray
     }
   }
 
@@ -1006,6 +1035,9 @@ Item {
     for (var i = 0; i < moduleSlots.length; i++) {
       var slot = moduleSlots[i]
       if (!slot || slot === sourceSlot || !slot.visible || slot.width <= 0 || slot.height <= 0) continue
+      // Widgets in the tray's drawer stay out of the drop targets: the drawer
+      // is closed during a drag, so they are not on screen.
+      if (slot.region === "tray") continue
       if (sourceWindow && !root.sameWindow(root.slotWindow(slot), sourceWindow)) continue
 
       var slotPoint = { x: slot.x, y: slot.y }
@@ -2040,6 +2072,9 @@ Item {
       return componentLoader.item
     }
     readonly property bool hovered: moduleHover.hovered
+    // The tray, or a clone of it, hosts the tray section in its drawer. One
+    // inside the drawer does not, so the section never holds itself.
+    readonly property bool hostsTraySection: region !== "tray" && !!activeItem && "sectionHost" in activeItem
     readonly property bool dragSource: root.barDragSource === slot
     readonly property bool panelOpen: root.activePopout === slot.activeItem
     // Modules bigger than the mark they want (a text label in a padded slot,
@@ -2065,6 +2100,14 @@ Item {
     }
 
     HoverHandler { id: moduleHover }
+
+    Loader {
+      id: traySectionLoader
+      readonly property Item host: slot.hostsTraySection ? slot.activeItem.sectionHost : null
+      parent: host || slot
+      active: !!host
+      sourceComponent: traySectionComponent
+    }
 
     BorderSurface {
       visible: slot.dragSource

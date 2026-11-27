@@ -1,8 +1,9 @@
-// The bar sections Islands draws, in the order they run along the bar. The
-// center island holds the last three: centerBegin and centerEnd hang off the
-// two edges of the center list.
+// The bar sections Islands draws, in the order they run along the bar, and
+// tray, drawn inside the tray's drawer. The center island holds centerBegin,
+// center, and centerEnd: the first and last hang off the edges of the center
+// list.
 var centerSections = ["centerBegin", "center", "centerEnd"]
-var layoutRegions = ["left", "centerBegin", "center", "centerEnd", "right"]
+var layoutRegions = ["left", "centerBegin", "center", "centerEnd", "right", "tray"]
 
 function isPlainObject(value) {
   return !!value && typeof value === "object" && !Array.isArray(value)
