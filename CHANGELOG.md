@@ -23,6 +23,7 @@ All notable changes to Islands. The format follows [Keep a Changelog](https://ke
 - The background of a collapsed tray island.
 - Bar tooltips at fractional scales: they stay hidden until the popup scale matches the bar, and their border stays inside the surface.
 - Unreadable popup panels on light themes.
+- A click on a widget beside a collapsed tray drawer no longer opens a widget from the `tray` section. A click target now counts only where a clipping or hidden parent does not cut it off.
 
 ## [1.0.0] - 2026-09-29
 
