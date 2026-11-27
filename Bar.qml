@@ -1104,22 +1104,30 @@ Item {
       && typeof target.triggerPress === "function"
   }
 
+  // True when the point (in source's coordinates) is on target and on screen.
+  // A box test alone is not enough: the tray section's widgets stay laid out
+  // inside the collapsed tray drawer, which clips them away. Their boxes then
+  // overlap the widgets beside the tray, so a click on the bluetooth icon hit
+  // the hidden superwhisper widget. Walk up the parents and reject a point
+  // that a hidden, disabled, or clipping ancestor cuts off.
+  function itemContainsPoint(target, source, x, y) {
+    try {
+      if (!target || !target.contains(target.mapFromItem(source, x, y))) return false
+      for (var item = target; item; item = item.parent) {
+        if (!item.visible || item.opacity === 0 || !item.enabled) return false
+        if (item.clip && !item.contains(item.mapFromItem(source, x, y))) return false
+      }
+    } catch (e) {
+      return false
+    }
+    return true
+  }
+
   function moduleClickTargetAt(slot, localX, localY) {
     for (var i = clickTargets.length - 1; i >= 0; i--) {
       var target = clickTargets[i]
       if (!moduleTargetClickable(target)) continue
-
-      var targetPoint = { x: localX, y: localY }
-      try {
-        targetPoint = slot.mapToItem(target, localX, localY)
-      } catch (e) {
-        continue
-      }
-
-      if (targetPoint.x >= 0 && targetPoint.x <= target.width &&
-          targetPoint.y >= 0 && targetPoint.y <= target.height) {
-        return target
-      }
+      if (itemContainsPoint(target, slot, localX, localY)) return target
     }
 
     if (moduleTargetClickable(slot.activeItem)) return slot.activeItem
