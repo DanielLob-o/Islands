@@ -85,9 +85,9 @@ Item {
   property color background: Color.bar.background
   property color urgent: Color.bar.active
 
-  Behavior on barForeground { enabled: root.foregroundAnimationEnabled; ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
-  Behavior on background { ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
-  Behavior on urgent { ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
+  Behavior on barForeground { enabled: root.foregroundAnimationEnabled; ColorAnimation { duration: Style.duration(250); easing.type: Easing.OutCubic } }
+  Behavior on background { ColorAnimation { duration: Style.duration(250); easing.type: Easing.OutCubic } }
+  Behavior on urgent { ColorAnimation { duration: Style.duration(250); easing.type: Easing.OutCubic } }
 
   // Popup panels paint on the theme's popup surface (Color.popups), not on
   // the island fill, so their text must follow the theme's popup colors
@@ -1671,7 +1671,7 @@ Item {
         opacity: root.barMoveCandidate === modelData ? (root.transparent ? 0.45 : 0.7) : 0
 
         Behavior on opacity {
-          NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+          NumberAnimation { duration: Style.duration(140); easing.type: Easing.OutCubic }
         }
       }
     }
@@ -1900,11 +1900,11 @@ Item {
     border.width: root.islandBorderWidth
     antialiasing: true
 
-    Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-    Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-    Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-    Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-    Behavior on color { ColorAnimation { duration: 240 } }
+    Behavior on x { NumberAnimation { duration: Style.duration(160); easing.type: Easing.OutCubic } }
+    Behavior on y { NumberAnimation { duration: Style.duration(160); easing.type: Easing.OutCubic } }
+    Behavior on width { NumberAnimation { duration: Style.duration(160); easing.type: Easing.OutCubic } }
+    Behavior on height { NumberAnimation { duration: Style.duration(160); easing.type: Easing.OutCubic } }
+    Behavior on color { ColorAnimation { duration: Style.duration(240) } }
   }
 
   component CenterGestureArea: MouseArea {
@@ -2179,7 +2179,7 @@ Item {
       z: 50
 
       Behavior on opacity {
-        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: Style.duration(120); easing.type: Easing.OutCubic }
       }
     }
 
