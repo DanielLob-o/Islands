@@ -1,3 +1,9 @@
+// The bar sections Islands draws, in the order they run along the bar. The
+// center island holds the last three: centerBegin and centerEnd hang off the
+// two edges of the center list.
+var centerSections = ["centerBegin", "center", "centerEnd"]
+var layoutRegions = ["left", "centerBegin", "center", "centerEnd", "right"]
+
 function isPlainObject(value) {
   return !!value && typeof value === "object" && !Array.isArray(value)
 }
@@ -35,7 +41,7 @@ function pinTrayToInner(entries, section) {
     else result.push(values[i])
   }
   if (trayEntry) {
-    if (section === "right") result.unshift(trayEntry)
+    if (section === "right" || section === "centerEnd") result.unshift(trayEntry)
     else result.push(trayEntry)
   }
   return result
@@ -73,9 +79,16 @@ function entriesAfter(entries, name) {
 // touches an entry a live settings push cannot safely reach: custom modules
 // read their entry directly rather than an injected settings property, and
 // a duplicated id makes the push ambiguous.
+// Panel tabbing and positional hotkeys take the center island as one section:
+// centerBegin, center, and centerEnd, in the order they read.
+function navigationRegions(region) {
+  var name = String(region || "")
+  return centerSections.indexOf(name) !== -1 ? centerSections.slice() : [name]
+}
+
 function inlineSettingsDelta(current, next) {
   if (!isPlainObject(current) || !isPlainObject(next)) return null
-  var regions = ["left", "center", "right"]
+  var regions = layoutRegions
   var counts = {}
   for (var r = 0; r < regions.length; r++) {
     var entries = Array.isArray(next[regions[r]]) ? next[regions[r]] : []
@@ -222,6 +235,7 @@ if (typeof module !== "undefined") {
     entryIndex: entryIndex,
     entriesBefore: entriesBefore,
     entriesAfter: entriesAfter,
+    navigationRegions: navigationRegions,
     inlineSettingsDelta: inlineSettingsDelta,
     expandPath: expandPath,
     customModuleSafeName: customModuleSafeName,

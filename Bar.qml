@@ -46,7 +46,7 @@ Item {
     position: "top",
     transparent: false,
     centerAnchor: "omarchy.clock",
-    layout: { left: [], center: [], right: [] }
+    layout: { left: [], centerBegin: [], center: [], centerEnd: [], right: [] }
   })
   property var layoutConfig: fallbackBarConfig.layout
   property string centerAnchor: ""
@@ -641,15 +641,17 @@ Item {
   function normalizeLayout(layout) {
     var normalized = Util.normalizeLayout(Util.isPlainObject(layout) ? layout : fallbackBarConfig.layout)
     return {
-      left:   pinTrayToInner(normalized.left,   "left"),
-      center: pinTrayToInner(normalized.center, "center"),
-      right:  pinTrayToInner(normalized.right,  "right")
+      left:        pinTrayToInner(normalized.left,        "left"),
+      centerBegin: pinTrayToInner(normalized.centerBegin, "centerBegin"),
+      center:      pinTrayToInner(normalized.center,      "center"),
+      centerEnd:   pinTrayToInner(normalized.centerEnd,   "centerEnd"),
+      right:       pinTrayToInner(normalized.right,       "right")
     }
   }
 
   // The tray drawer reveals inward (away from the bar edge). Place it at the
-  // section's inner edge: start of the right section, end of the left/center
-  // sections. The drawer's reserved space then sits next to the bar center,
+  // section's inner edge: start of the right and centerEnd sections, end of
+  // the left, centerBegin, and center sections. The drawer's reserved space then sits next to the bar center,
   // not stranded mid-section.
   function pinTrayToInner(entries, section) {
     return BarModel.pinTrayToInner(entries, section)
@@ -701,20 +703,24 @@ Item {
   // Tab order for the panels in one bar region. Scoped to a single bar surface
   // so tabbing walks the bar the open panel belongs to instead of hopping the
   // panel to another monitor's copy of the same widget.
+  // The center island's three sections tab as one (BarModel.navigationRegions).
   function panelNavigationSlots(region, window) {
-    var entries = layoutEntries(region)
+    var regions = BarModel.navigationRegions(region)
     var slots = []
-    for (var i = 0; i < entries.length; i++) {
-      var id = entryId(entries[i])
-      for (var j = 0; j < moduleSlots.length; j++) {
-        var slot = moduleSlots[j]
-        if (!slot || slot.region !== region || slot.moduleName !== id) continue
-        if (window && !sameWindow(slotWindow(slot), window)) continue
-        var item = slot.activeItem
-        if (!item || item.visible !== true || slot.visible !== true || slot.width <= 0 || slot.height <= 0) continue
-        if (typeof item.open !== "function" || typeof item.close !== "function" || item.opened === undefined) continue
-        slots.push(slot)
-        break
+    for (var r = 0; r < regions.length; r++) {
+      var entries = layoutEntries(regions[r])
+      for (var i = 0; i < entries.length; i++) {
+        var id = entryId(entries[i])
+        for (var j = 0; j < moduleSlots.length; j++) {
+          var slot = moduleSlots[j]
+          if (!slot || slot.region !== regions[r] || slot.moduleName !== id) continue
+          if (window && !sameWindow(slotWindow(slot), window)) continue
+          var item = slot.activeItem
+          if (!item || item.visible !== true || slot.visible !== true || slot.width <= 0 || slot.height <= 0) continue
+          if (typeof item.open !== "function" || typeof item.close !== "function" || item.opened === undefined) continue
+          slots.push(slot)
+          break
+        }
       }
     }
     return slots
@@ -1659,6 +1665,10 @@ Item {
     id: centerRoot
 
     property var entries: root.layoutEntries("center")
+    // Omarchy's center box: centerBegin and centerEnd hang off the two edges
+    // of the center list, and all three share the center island.
+    property var beginEntries: root.layoutEntries("centerBegin")
+    property var endEntries: root.layoutEntries("centerEnd")
     readonly property bool hasAnchor: root.entryIndex(entries, root.centerAnchor) !== -1
     readonly property var anchorEntry: root.findCenterAnchorEntry()
 
@@ -1675,18 +1685,29 @@ Item {
 
         CenterGestureArea { anchors.fill: parent }
 
+        // The handler covers the whole bar, so the peek opens only while the
+        // pointer is over the center island itself, not over the empty bar
+        // between the islands.
         HoverHandler {
-          onHoveredChanged: root.setCenterSectionHovered(hovered)
+          id: hCenterHover
         }
 
+        readonly property bool overCenterIsland: hCenterHover.hovered && hCenterIsland.visible
+          && hCenterHover.point.position.x >= hCenterIsland.x
+          && hCenterHover.point.position.x <= hCenterIsland.x + hCenterIsland.width
+        onOverCenterIslandChanged: root.setCenterSectionHovered(overCenterIsland)
+
         Island {
-          visible: centerRoot.hasAnchor
+          id: hCenterIsland
+          readonly property bool beginShown: hBegin.visible && hBegin.width > 0
+          readonly property bool endShown: hEnd.visible && hEnd.width > 0
+          visible: beginShown || endShown || (centerRoot.hasAnchor
             ? centerAnchorModule.width > 0 || (hBefore.visible && hBefore.width > 0) || (hAfter.visible && hAfter.width > 0)
-            : hUnanchored.visible && hUnanchored.width > 0
-          from: centerRoot.hasAnchor
+            : hUnanchored.visible && hUnanchored.width > 0)
+          from: beginShown ? hBegin.x : centerRoot.hasAnchor
             ? (hBefore.visible && hBefore.width > 0 ? hBefore.x : centerAnchorModule.x)
             : hUnanchored.x
-          to: centerRoot.hasAnchor
+          to: endShown ? hEnd.x + hEnd.width : centerRoot.hasAnchor
             ? (hAfter.visible && hAfter.width > 0 ? hAfter.x + hAfter.width : centerAnchorModule.x + centerAnchorModule.width)
             : hUnanchored.x + hUnanchored.width
         }
@@ -1724,6 +1745,24 @@ Item {
           anchors.left: centerAnchorModule.right
           anchors.verticalCenter: centerAnchorModule.verticalCenter
         }
+
+        // An empty list keeps its place at zero width, so these meet the
+        // center list's edges, or the middle of the bar when it is empty.
+        ModuleList {
+          id: hBegin
+          entries: centerRoot.beginEntries
+          region: "centerBegin"
+          anchors.right: centerRoot.hasAnchor ? hBefore.left : hUnanchored.left
+          anchors.verticalCenter: parent.verticalCenter
+        }
+
+        ModuleList {
+          id: hEnd
+          entries: centerRoot.endEntries
+          region: "centerEnd"
+          anchors.left: centerRoot.hasAnchor ? hAfter.right : hUnanchored.right
+          anchors.verticalCenter: parent.verticalCenter
+        }
       }
     }
 
@@ -1735,18 +1774,29 @@ Item {
 
         CenterGestureArea { anchors.fill: parent }
 
+        // The handler covers the whole bar, so the peek opens only while the
+        // pointer is over the center island itself, not over the empty bar
+        // between the islands.
         HoverHandler {
-          onHoveredChanged: root.setCenterSectionHovered(hovered)
+          id: vCenterHover
         }
 
+        readonly property bool overCenterIsland: vCenterHover.hovered && vCenterIsland.visible
+          && vCenterHover.point.position.y >= vCenterIsland.y
+          && vCenterHover.point.position.y <= vCenterIsland.y + vCenterIsland.height
+        onOverCenterIslandChanged: root.setCenterSectionHovered(overCenterIsland)
+
         Island {
-          visible: centerRoot.hasAnchor
+          id: vCenterIsland
+          readonly property bool beginShown: vBegin.visible && vBegin.height > 0
+          readonly property bool endShown: vEnd.visible && vEnd.height > 0
+          visible: beginShown || endShown || (centerRoot.hasAnchor
             ? centerAnchorModule.height > 0 || (vBefore.visible && vBefore.height > 0) || (vAfter.visible && vAfter.height > 0)
-            : vUnanchored.visible && vUnanchored.height > 0
-          from: centerRoot.hasAnchor
+            : vUnanchored.visible && vUnanchored.height > 0)
+          from: beginShown ? vBegin.y : centerRoot.hasAnchor
             ? (vBefore.visible && vBefore.height > 0 ? vBefore.y : centerAnchorModule.y)
             : vUnanchored.y
-          to: centerRoot.hasAnchor
+          to: endShown ? vEnd.y + vEnd.height : centerRoot.hasAnchor
             ? (vAfter.visible && vAfter.height > 0 ? vAfter.y + vAfter.height : centerAnchorModule.y + centerAnchorModule.height)
             : vUnanchored.y + vUnanchored.height
         }
@@ -1783,6 +1833,22 @@ Item {
           region: "center"
           anchors.top: centerAnchorModule.bottom
           anchors.horizontalCenter: centerAnchorModule.horizontalCenter
+        }
+
+        ModuleList {
+          id: vBegin
+          entries: centerRoot.beginEntries
+          region: "centerBegin"
+          anchors.bottom: centerRoot.hasAnchor ? vBefore.top : vUnanchored.top
+          anchors.horizontalCenter: parent.horizontalCenter
+        }
+
+        ModuleList {
+          id: vEnd
+          entries: centerRoot.endEntries
+          region: "centerEnd"
+          anchors.top: centerRoot.hasAnchor ? vAfter.bottom : vUnanchored.bottom
+          anchors.horizontalCenter: parent.horizontalCenter
         }
       }
     }
