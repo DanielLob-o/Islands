@@ -1681,11 +1681,20 @@ Item {
 
         CenterGestureArea { anchors.fill: parent }
 
+        // The handler covers the whole bar, so the peek opens only while the
+        // pointer is over the center island itself, not over the empty bar
+        // between the islands.
         HoverHandler {
-          onHoveredChanged: root.setCenterSectionHovered(hovered)
+          id: hCenterHover
         }
 
+        readonly property bool overCenterIsland: hCenterHover.hovered && hCenterIsland.visible
+          && hCenterHover.point.position.x >= hCenterIsland.x
+          && hCenterHover.point.position.x <= hCenterIsland.x + hCenterIsland.width
+        onOverCenterIslandChanged: root.setCenterSectionHovered(overCenterIsland)
+
         Island {
+          id: hCenterIsland
           readonly property bool beginShown: hBegin.visible && hBegin.width > 0
           readonly property bool endShown: hEnd.visible && hEnd.width > 0
           visible: beginShown || endShown || (centerRoot.hasAnchor
@@ -1761,11 +1770,20 @@ Item {
 
         CenterGestureArea { anchors.fill: parent }
 
+        // The handler covers the whole bar, so the peek opens only while the
+        // pointer is over the center island itself, not over the empty bar
+        // between the islands.
         HoverHandler {
-          onHoveredChanged: root.setCenterSectionHovered(hovered)
+          id: vCenterHover
         }
 
+        readonly property bool overCenterIsland: vCenterHover.hovered && vCenterIsland.visible
+          && vCenterHover.point.position.y >= vCenterIsland.y
+          && vCenterHover.point.position.y <= vCenterIsland.y + vCenterIsland.height
+        onOverCenterIslandChanged: root.setCenterSectionHovered(overCenterIsland)
+
         Island {
+          id: vCenterIsland
           readonly property bool beginShown: vBegin.visible && vBegin.height > 0
           readonly property bool endShown: vEnd.visible && vEnd.height > 0
           visible: beginShown || endShown || (centerRoot.hasAnchor
