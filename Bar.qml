@@ -169,8 +169,13 @@ Item {
     api.barSize = Qt.binding(function() { return root.barSize })
     api.transparent = Qt.binding(function() { return root.transparent })
     api.foregroundAnimationEnabled = Qt.binding(function() { return root.foregroundAnimationEnabled })
-    api.centerSectionRevealHeld = Qt.binding(function() { return root.centerSectionRevealHeld })
-    api._centerHoverRevealSuppressed = Qt.binding(function() { return root.centerHoverRevealSuppressed })
+    // Omarchy 4.6 removed the center peek from the plugin bar API. Setting a
+    // property that does not exist throws and stops this function, so set
+    // these only where the host still has them (Omarchy 4.5).
+    if ("centerSectionRevealHeld" in api)
+      api.centerSectionRevealHeld = Qt.binding(function() { return root.centerSectionRevealHeld })
+    if ("_centerHoverRevealSuppressed" in api)
+      api._centerHoverRevealSuppressed = Qt.binding(function() { return root.centerHoverRevealSuppressed })
     root.syncPluginBarApiObjects(api)
   }
 
@@ -299,12 +304,15 @@ Item {
         return String(requestedId || "") === String(moduleName || "")
           ? root.moduleWidgets(moduleName) : []
       },
-      _run: function(command) { root.run(command) },
-      _setCenterHoverRevealSuppressed: function(value) {
-        root.centerHoverRevealSuppressed = !!value
-      }
+      _run: function(command) { root.run(command) }
     })
     if (!api) return null
+    // Omarchy 4.5 only; see bindPluginBarApi.
+    if ("_setCenterHoverRevealSuppressed" in api) {
+      api._setCenterHoverRevealSuppressed = function(value) {
+        root.centerHoverRevealSuppressed = !!value
+      }
+    }
     root.bindPluginBarApi(api)
 
     var next = ({})
@@ -1308,13 +1316,9 @@ Item {
     // reveal has to rebuild them (new surface, re-shaped glyphs, re-uploaded
     // textures), which measures ~150ms against ~20ms to tear down. Parking
     // keeps the surface alive, so showing is only a margin change.
-    visible: !remapGuard.remapping
+    // No ScreenMoveRemap guard: Omarchy 4.6 removed it, because Hyprland 0.57
+    // moves layer surfaces with their monitor.
     exclusionMode: root.barHidden ? ExclusionMode.Ignore : ExclusionMode.Auto
-
-    ScreenMoveRemap {
-      id: remapGuard
-      window: barWindow
-    }
 
     margins {
       top: root.barHidden && root.position === "top" ? -root.barWindowSize : 0
