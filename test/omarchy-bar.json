@@ -1,0 +1,19 @@
+{
+  "source": "https://github.com/omacom/omarchy",
+  "path": "shell/plugins/bar",
+  "files": [
+    "Bar.qml",
+    "BarModel.js"
+  ],
+  "updated": "2026-11-27",
+  "compared": {
+    "v4.5.0": {
+      "Bar.qml": "865998cec3114a395e130e1ff16f92486c3fad8da59400035b95c11522c2b235",
+      "BarModel.js": "9394b2ca8256518bbe04a8b11f4b740e20c2d9c0859372eda475dc33200471b8"
+    },
+    "v4.6.0-rc1": {
+      "Bar.qml": "994768501c142af6697bc8043e0eeb79427bc1c69fd8ce03eb112286d91aebb8",
+      "BarModel.js": "c54906d2e6ad196cfd22a8e4b9589d8fb5ed76f898d8b9b5e2a1593e0920236e"
+    }
+  }
+}

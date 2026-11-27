@@ -10,7 +10,7 @@ Islands is a full bar, not a widget. It uses your existing widgets and layout, s
 
 ## Requirements
 
-- Omarchy (Quattro)
+- Omarchy 4.5 or later (tested on 4.5.0 and 4.6.0-rc1)
 
 ## Installation
 
@@ -82,6 +82,16 @@ Omarchy rebuilds third-party bars when `shell.json` changes, and some built-in w
 ```sh
 omarchy restart shell
 ```
+
+## Development
+
+Run the checks before you commit:
+
+```sh
+python3 test/run.py all
+```
+
+[docs/testing.md](docs/testing.md) explains each check. GitHub Actions also checks every pull request against the oldest supported Omarchy release and Omarchy's development branch. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## Removal
 

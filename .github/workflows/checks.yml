@@ -1,0 +1,69 @@
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Mondays: catch a change on Omarchy's development branch before it ships.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portable:
+    name: Portable checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the plugin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - name: Run the portable checks
+        run: python3 test/run.py
+      - name: Check the whitespace of the last commit
+        run: git show --format= --check HEAD
+
+  omarchy:
+    name: Omarchy ${{ matrix.ref }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # v4.5.0: the oldest supported release (README > Requirements).
+        # quattro: Omarchy's development branch, the next release.
+        ref: [v4.5.0, quattro]
+    steps:
+      - name: Check out the plugin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out Omarchy ${{ matrix.ref }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: omacom/omarchy
+          ref: ${{ matrix.ref }}
+          path: .omarchy
+          persist-credentials: false
+          sparse-checkout: |
+            shell
+            bin
+            default/i18n
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - name: Check against Omarchy ${{ matrix.ref }}
+        run: python3 test/run.py all --omarchy .omarchy

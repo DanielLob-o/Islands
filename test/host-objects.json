@@ -1,0 +1,6 @@
+{
+  "shell": "services/PluginShellApi.qml",
+  "barWidgetRegistry": "services/PluginBarWidgetRegistryApi.qml",
+  "pluginRegistry": "services/PluginRegistryApi.qml",
+  "api": "Ui/PluginBarApi.qml"
+}

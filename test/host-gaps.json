@@ -1,0 +1,4 @@
+{
+  "bar.cycleBackground": "Islands has no background cycle yet. Omarchy's toggleBarTransparency IPC call answers \"no-bar\" while Islands is the bar.",
+  "bar.screenBarSizes": "Islands does not publish its size for each monitor yet. Plugins that read barSizes get an empty object."
+}
